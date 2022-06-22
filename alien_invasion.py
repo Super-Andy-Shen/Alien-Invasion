@@ -1,4 +1,5 @@
 import sys
+from turtle import Screen
 from xmlrpc.client import TRANSPORT_ERROR
 import pygame
 from ship import *
@@ -13,6 +14,8 @@ class AlienInvasion:
         #self.settings.screen_height = self.screen.get_rect().height
         #self.settings.screen_width = self.screen.get_rect().width
         self.screen = pygame.display.set_mode((self.settings.screen_width,self.settings.screen_height))
+        #self.bg = pygame.image.load("images/bg.png")
+        #self.bg= pygame.transform.scale(self.bg, (1200, 800))
         pygame.display.set_caption("Andy's Game")
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -60,6 +63,7 @@ class AlienInvasion:
             self._update_bullets()
             self._update_aliens()
             self._update_screen()
+            
     
     
     def _update_bullets(self):
@@ -67,7 +71,12 @@ class AlienInvasion:
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
-
+        self._check_bullet_alien_collisions()
+    def _check_bullet_alien_collisions(self):
+        collision = pygame.sprite.groupcollide(self.bullets,self.aliens,True,True)
+        if not self.aliens:
+            self.bullets.empty()
+            self._create_fleet()
     def _check_events(self):
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -106,6 +115,7 @@ class AlienInvasion:
     
     def _update_screen(self):
         self.screen.fill(self.settings.bg_color)
+        #self.screen.blit(self.bg, (0, 0))
         self.ship.blitme()
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
