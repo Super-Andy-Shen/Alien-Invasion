@@ -8,22 +8,24 @@ from setting import Settings
 from bullet import Bullet
 from time import sleep
 from game_stats import GameStats
+from button import Button
 class AlienInvasion:
     def __init__(self):
         pygame.init()
         self.settings = Settings()
-       # self.screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
-        #self.settings.screen_height = self.screen.get_rect().height
-        #self.settings.screen_width = self.screen.get_rect().width
-        self.screen = pygame.display.set_mode((self.settings.screen_width,self.settings.screen_height))
+        self.screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
+        self.settings.screen_height = self.screen.get_rect().height
+        self.settings.screen_width = self.screen.get_rect().width
+        #self.screen = pygame.display.set_mode((self.settings.screen_width,self.settings.screen_height))
         self.bg = pygame.image.load("images/space.png")
-        self.bg= pygame.transform.scale(self.bg, (1200, 800))
+        self.bg= pygame.transform.scale(self.bg, (self.settings.screen_width, self.settings.screen_height))
         pygame.display.set_caption("Andy's Game")
         self.stats = GameStats(self)
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
         self._create_fleet()
+        self.play_button = Button(self,"Play")
     def _check_aliens_bottom(self):
         screen_rect = self.screen.get_rect()
         for alien in self.aliens.sprites():
@@ -41,6 +43,7 @@ class AlienInvasion:
           sleep(1)
         else:
             self.stats.game_active = False
+            pygame.mouse.set_visible(True)
     def _update_aliens(self):
         self._check_fleet_edges()
         for alien in self.aliens.sprites():
@@ -82,15 +85,12 @@ class AlienInvasion:
     def run_game(self):
         while True:
             self._check_events()
-
             if self.stats.game_active:
-               self.ship.update()
-               self._update_bullets()
-               self._update_aliens()
-            
-               self._update_screen()
-            else:
-                sys.exit()
+                
+                self.ship.update()
+                self._update_bullets()
+                self._update_aliens()
+            self._update_screen()
     
     
     def _update_bullets(self):
@@ -104,6 +104,19 @@ class AlienInvasion:
         if not self.aliens:
             self.bullets.empty()
             self._create_fleet()
+    
+    
+    def _check_play_button(self,mouse_pos):
+        if self.play_button.rect.collidepoint(mouse_pos) and not self.stats.game_active:
+            self.stats.reset_stats()
+            self.stats.game_active = True
+            self.aliens.empty()
+            self.bullets.empty()
+
+            self._create_fleet()
+            self.ship.center_ship()
+            pygame.mouse.set_visible(False)
+    
     def _check_events(self):
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -112,6 +125,10 @@ class AlienInvasion:
                     self._check_keydown_events(event)
                 elif event.type == pygame.KEYUP:
                     self._check_keyup_events(event)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    self._check_play_button(mouse_pos)
+    
             
     def _check_keydown_events(self,event):
         if event.key == pygame.K_RIGHT:
@@ -141,12 +158,15 @@ class AlienInvasion:
                         self.ship.moving_down = False
     
     def _update_screen(self):
+
         self.screen.fill(self.settings.bg_color)
         self.screen.blit(self.bg, (0, 0))
         self.ship.blitme()
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+        if not self.stats.game_active:
+            self.play_button.draw_button()
         pygame.display.flip()
 if __name__ == "__main__":
   ai = AlienInvasion()
